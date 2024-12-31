@@ -43,4 +43,20 @@ export class JwtAuthService {
           );
         }
       }
+
+
+      public verifyToken(token: string): JwtPayload {
+        try {
+          return this.jwtService.verify<JwtPayload>(token, {
+            secret: this.configService.get<string>('jwt.JWT_SECRET'),
+          });
+        } catch (error) {
+          throw new ErrorHttpException(
+            HttpStatus.UNAUTHORIZED,
+            'Invalid or expired token.',
+            'Unauthorized',
+            error,
+          );
+        }
+      }
 }
