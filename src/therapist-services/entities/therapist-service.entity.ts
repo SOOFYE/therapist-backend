@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { TherapistEntity } from "../../therapist/entities/therapist.entity";
 
 @Entity('therapist_services')
@@ -13,5 +13,6 @@ export class TherapistServiceEntity {
     price: number;
   
     @ManyToOne(() => TherapistEntity, (therapist) => therapist.services)
+    @JoinColumn({ name: 'therapistId' })
     therapist: TherapistEntity;
 }

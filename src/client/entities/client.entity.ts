@@ -1,13 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn, PrimaryColumn, OneToOne } from "typeorm";
 import { UserEntity } from "../../user/entities/user.entity";
 import { AppointmentEntity } from "../../appointment/entities/appointment.entity";
 
 @Entity('clients')
 export class ClientEntity {
-    @PrimaryGeneratedColumn('uuid')
+
+  @PrimaryGeneratedColumn('uuid')
     id: string;
-  
-    @ManyToOne(() => UserEntity, (user) => user.clients)
+
+    @OneToOne(() => UserEntity, { eager: true })
+    @JoinColumn({ name: 'id' })
     user: UserEntity;
     
     @OneToMany(() => AppointmentEntity, (appointment) => appointment.client, { cascade: true })

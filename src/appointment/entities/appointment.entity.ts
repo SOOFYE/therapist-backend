@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, OneToOne } from "typeorm";
 import { ClientEntity } from "../../client/entities/client.entity";
 import { TherapistEntity } from "../../therapist/entities/therapist.entity";
 import { AppointmentTypeEnum } from "../enum/appointment-type.enum";
 import { SessionRecordEntity } from "../../session-record/entities/session-record.entity";
+import { TherapistServiceEntity } from "../../therapist-services/entities/therapist-service.entity";
 
 @Entity('appointments')
 export class AppointmentEntity {
@@ -24,9 +25,14 @@ export class AppointmentEntity {
   @ManyToOne(() => TherapistEntity, (therapist) => therapist.appointments)
   therapist: TherapistEntity;
 
+  @ManyToOne(() => TherapistServiceEntity, { nullable: false })
+  @JoinColumn()
+  service: TherapistServiceEntity;
+
   @ManyToOne(() => ClientEntity, (client) => client.appointments)
   client: ClientEntity;
 
-  @OneToMany(() => SessionRecordEntity, (sessionRecord) => sessionRecord.appointment)
-  sessionRecords: SessionRecordEntity[]; 
+  @OneToOne(() => SessionRecordEntity, (sessionRecord) => sessionRecord.appointment)
+  @JoinColumn() 
+  sessionRecord: SessionRecordEntity; 
 }

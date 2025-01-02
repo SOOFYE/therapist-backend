@@ -12,6 +12,7 @@ import { ClientEntity } from '../client/entities/client.entity';
 import { ClientService } from '../client/client.service';
 import { ErrorHttpException } from '../common/errors/error-http.exception';
 import { JwtAuthService } from '../jwt/jwt-auth.service';
+import { SuccessResponse } from '../common/sucesses/success-http.response';
 
 
 @ApiTags('Authentication')
@@ -28,15 +29,19 @@ export class AuthController {
 
   @Post('client/signup')
   @ApiOperation({ summary: 'Client Sign-Up' })
-  async clientSignUp(@Body() clientData: ClientSignUpDto): Promise<UserEntity> {
-
-    try{
-
-      if(await this.userService.findOne({email: clientData.email}))
-        throw new ErrorHttpException(HttpStatus.BAD_REQUEST,"User with this email already exist","Duplicate Records",null)
-
+  async clientSignUp(@Body() clientData: ClientSignUpDto): Promise<SuccessResponse<{accessToken: string, user: UserEntity}>> {
+    try {
+      if (await this.userService.findOne({ email: clientData.email })) {
+        throw new ErrorHttpException(
+          HttpStatus.BAD_REQUEST,
+          'User with this email already exists',
+          'Duplicate Records',
+          null,
+        );
+      }
+  
       const clientPassword = await this.authService.generateHashedPassword(clientData.password);
-
+  
       const user: UserEntity = await this.userService.create({
         firstName: clientData.firstName,
         middleName: clientData?.middleName,
@@ -45,21 +50,20 @@ export class AuthController {
         phoneNumber: clientData.phoneNumber,
         password: clientPassword,
         dob: clientData.dob,
-        role: RoleEnum.client
-      })
-
-      const client: ClientEntity = await this.clientService.create({user})
-
-
+        role: RoleEnum.client,
+      });
+  
+      const client: ClientEntity = await this.clientService.create({ user });
+  
       const updatedUser: UserEntity = await this.userService.update(user.id, { clients: [client] });
 
-      return updatedUser
-
-
-    }catch (error) {
-
+      const payload = { sub: user.id, role: user.role}; 
+      const accessToken = this.jwtService.generateAccessToken(payload);
+  
+      return new SuccessResponse(HttpStatus.CREATED, 'Client account created successfully', {accessToken: accessToken,user: updatedUser});
+    } catch (error) {
       if (!(error instanceof ErrorHttpException)) {
-        console.log(error)
+        console.log(error);
         throw new ErrorHttpException(
           HttpStatus.INTERNAL_SERVER_ERROR,
           'An unexpected error occurred',
@@ -70,51 +74,54 @@ export class AuthController {
   
       throw error;
     }
-
   }
 
   @Post('client/signin')
-  @ApiOperation({ summary: 'Client Sign-In' })
-  async clientSignIn(@Body() loginData: LoginDto): Promise<{ accessToken: string; user: UserEntity }> {
+@ApiOperation({ summary: 'Client Sign-In' })
+async clientSignIn(@Body() loginData: LoginDto): Promise<SuccessResponse<{ accessToken: string; user: UserEntity }>> {
+  try {
+    const user: UserEntity = await this.userService.findOne({ email: loginData.email });
 
-    try{
+    if (!user) {
+      throw new ErrorHttpException(
+        HttpStatus.NOT_FOUND,
+        'User with this email does not exist',
+        'Not Found',
+        null,
+      );
+    }
 
-    
+    if (!await this.authService.comparePassword(loginData.password, user?.password)) {
+      throw new ErrorHttpException(
+        HttpStatus.BAD_REQUEST,
+        'Incorrect email/password',
+        'Authentication Failed',
+        null,
+      );
+    }
 
-    const user: UserEntity = await this.userService.findOne({email: loginData.email})
-
-    if(!user)
-      throw new ErrorHttpException(HttpStatus.NOT_FOUND,"User with this email does not exist","Not Found",null)
-
-    if(!await this.authService.comparePassword(loginData.password, user?.password))
-      throw new ErrorHttpException(HttpStatus.BAD_REQUEST,"Incorrect email/password",null)
-
-    const payload = { sub: user.id, role: user.role}; 
+    const payload = { sub: user.id, role: user.role };
     const accessToken = this.jwtService.generateAccessToken(payload);
 
-    return {accessToken,user}
+    return new SuccessResponse(HttpStatus.OK, 'Client logged in successfully', { accessToken, user });
+  } catch (error) {
+    if (!(error instanceof ErrorHttpException)) {
+      console.log(error);
+      throw new ErrorHttpException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'An unexpected error occurred',
+        'Internal Server Error',
+        error.message,
+      );
+    }
 
-}catch(error){
-
-  if (!(error instanceof ErrorHttpException)) {
-    console.log(error)
-    throw new ErrorHttpException(
-      HttpStatus.INTERNAL_SERVER_ERROR,
-      'An unexpected error occurred',
-      'Internal Server Error',
-      error.message,
-    );
+    throw error;
   }
-
-  throw error
 }
-    
-   
-  }
 
 @Post('therapist/signin')
 @ApiOperation({ summary: 'Therapist Sign-In' })
-async therapistSignIn(@Body() loginData: LoginDto): Promise<{ accessToken: string; user: UserEntity }> {
+async therapistSignIn(@Body() loginData: LoginDto): Promise<SuccessResponse<{ accessToken: string; user: UserEntity }>> {
   try {
     const user: UserEntity = await this.userService.findOne({ email: loginData.email, role: RoleEnum.therapist });
 
@@ -139,11 +146,10 @@ async therapistSignIn(@Body() loginData: LoginDto): Promise<{ accessToken: strin
     const payload = { sub: user.id, role: user.role };
     const accessToken = this.jwtService.generateAccessToken(payload);
 
-    return { accessToken, user };
-
+    return new SuccessResponse(HttpStatus.OK, 'Therapist logged in successfully', { accessToken, user });
   } catch (error) {
     if (!(error instanceof ErrorHttpException)) {
-      console.log(error)
+      console.log(error);
       throw new ErrorHttpException(
         HttpStatus.INTERNAL_SERVER_ERROR,
         'An unexpected error occurred',

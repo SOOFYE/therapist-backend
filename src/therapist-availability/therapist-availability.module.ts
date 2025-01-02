@@ -3,9 +3,10 @@ import { TherapistAvailabilityService } from './therapist-availability.service';
 import { TherapistAvailabilityController } from './therapist-availability.controller';
 import { TherapistAvailabilityEntity } from './entities/therapist-availability.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtAuthModule } from '../jwt/jwt.module';
 
 @Module({
-  imports:[TypeOrmModule.forFeature([TherapistAvailabilityEntity])],
+  imports:[JwtAuthModule,TypeOrmModule.forFeature([TherapistAvailabilityEntity])],
   controllers: [TherapistAvailabilityController],
   providers: [TherapistAvailabilityService],
 })

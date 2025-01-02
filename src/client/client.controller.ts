@@ -11,17 +11,4 @@ export class ClientController {
 
 
 
-  
-  @Get(':clientId/appointments')
-  @ApiOperation({ summary: 'Fetch all appointments for a client (paginated)' })
-  @ApiParam({ name: 'clientId', description: 'ID of the client' })
-  async getClientAppointments(
-    @Param('clientId') clientId: string,
-    @Query() paginationDto: ClientAppointmentsPaginationDto,
-  ): Promise<PaginatedResult<AppointmentEntity>> {
-    const { page, limit } = paginationDto;
-    return this.clientService.getClientAppointments(clientId, page, limit);
-  }
-
-
 }

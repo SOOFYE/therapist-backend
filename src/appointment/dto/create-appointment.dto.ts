@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsDateString, IsNotEmpty, IsString, IsEnum } from "class-validator";
+import { IsDateString, IsNotEmpty, IsString, IsEnum, IsUUID } from "class-validator";
 import { AppointmentTypeEnum } from "../enum/appointment-type.enum";
 import { IsTimeFormat } from "../../common/decorators/time.decorator";
 import { Transform } from "class-transformer";
@@ -27,4 +27,12 @@ export class CreateAppointmentDto {
     @ApiProperty({ description: 'Type of the appointment', enum: AppointmentTypeEnum, example: 'in-person' })
     @IsEnum(AppointmentTypeEnum)
     type: AppointmentTypeEnum;
+
+    @ApiProperty({
+      description: 'The ID of the service being selected',
+      example: 'd3b5228d-f09c-4b5f-bd81-b0d7b4614c8c',
+    })
+    @IsNotEmpty()
+    @IsUUID()
+    serviceId: string;
   }

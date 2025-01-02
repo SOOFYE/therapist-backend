@@ -6,6 +6,9 @@ import { TherapistAvailabilityEntity } from '../therapist-availability/entities/
 import { AppointmentEntity } from './entities/appointment.entity';
 import { DayOfWeekEnum } from '../therapist-availability/enum/days-of-week.enum';
 import { AppointmentTypeEnum } from './enum/appointment-type.enum';
+import { RoleEnum } from '../user/enums/role.enum';
+import { PaginatedResult } from '../common/interfaces/paginated-results.interface';
+import { TherapistServiceEntity } from '../therapist-services/entities/therapist-service.entity';
 
 @Injectable()
 export class AppointmentService {
@@ -20,13 +23,12 @@ export class AppointmentService {
   async createAppointment(
     clientId: string,
     therapistId: string,
-    appointmentData: { date: string; startTime: string; endTime: string; type: AppointmentTypeEnum },
+    appointmentData: { date: string; startTime: string; endTime: string; type: AppointmentTypeEnum, service: TherapistServiceEntity },
+    
   ): Promise<AppointmentEntity> {
     const { date, startTime, endTime, type } = appointmentData;
 
     
-
-  
     const appointment = this.appointmentRepository.create({
       date,
       startTime,
@@ -34,12 +36,91 @@ export class AppointmentService {
       type,
       therapist: { id: therapistId },
       client: { id: clientId },
+      service: appointmentData.service
     });
 
     console.log(appointment)
 
     return this.appointmentRepository.save(appointment);
   }
+
+
+  async getAppointmentsForUser(
+    userId: string,
+    role: RoleEnum,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedResult<AppointmentEntity>> {
+    const skip = (page - 1) * limit;
+  
+    const queryBuilder = this.appointmentRepository.createQueryBuilder('appointment')
+      .leftJoinAndSelect('appointment.sessionRecord', 'sessionRecord'); 
+  
+    if (role === RoleEnum.client) {
+      queryBuilder.where('appointment.client = :userId', { userId });
+    } else if (role === RoleEnum.therapist) {
+      queryBuilder.where('appointment.therapist = :userId', { userId });
+    } else {
+      throw new Error('Invalid role provided');
+    }
+  
+    const [data, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+  
+    return {
+      hasNext: page * limit < total,
+      page,
+      total,
+      data,
+    };
+  }
+
+
+  async getAppointmentById(appointmentId: string): Promise<AppointmentEntity> {
+    const appointment = await this.appointmentRepository.findOne({
+      where: { id: appointmentId },
+      relations: ['sessionRecord'], 
+    });
+  
+    if (!appointment) {
+      throw new BadRequestException('Appointment not found.');
+    }
+  
+    return appointment;
+  }
+
+
+  async updateAppointment(
+    appointmentId: string,
+    updateData: Partial<{
+      date: string;
+      startTime: string;
+      endTime: string;
+      type: AppointmentTypeEnum;
+    }>,
+  ): Promise<AppointmentEntity> {
+    
+    const appointment = await this.appointmentRepository.findOne({
+      where: { id: appointmentId },
+    });
+  
+    if (!appointment) {
+      throw new BadRequestException('Appointment not found.');
+    }
+  
+    
+    for (const [key, value] of Object.entries(updateData)) {
+      if (value !== undefined) {
+        (appointment as any)[key] = value;
+      }
+    }
+  
+    
+    return this.appointmentRepository.save(appointment);
+  }
+
 
 
   async checkAvailability(
@@ -72,8 +153,8 @@ export class AppointmentService {
         {
           therapist: { id: therapistId },
           date,
-          startTime: LessThan(endTime), // Existing start time is before the new end time
-          endTime: MoreThan(startTime), // Existing end time is after the new start time
+          startTime: LessThan(endTime), 
+          endTime: MoreThan(startTime), 
         },
       ],
     });

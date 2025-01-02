@@ -26,30 +26,6 @@ export class AuthService {
     return await bcrypt.hash(password, 10);
   }
 
-
-
-
-  // async clientSignUp(clientData: Partial<UserEntity>): Promise<UserEntity> {
-  //   const hashedPassword = await bcrypt.hash(clientData.password, 10);
-
-  //   const user = this.userRepository.create({
-  //     ...clientData,
-  //     password: hashedPassword,
-  //     role: RoleEnum.client,
-  //   });
-
-  //   const savedUser = await this.userRepository.save(user);
-
-  //   const client = this.clientRepository.create({
-  //     user: savedUser,
-  //   });
-  //   await this.clientRepository.save(client);
-
-  //   return savedUser;
-  // }
-
-
-
   async comparePassword(requestPassword: string, userPassword: string):Promise<Boolean>{
 
     if(!(await bcrypt.compare(requestPassword, userPassword)))
@@ -58,20 +34,6 @@ export class AuthService {
     return true
   }
 
-
-
-  // async clientSignIn(email: string, password: string): Promise<{ accessToken: string; user: UserEntity }> {
-
-
-  //   if (!user || !(await bcrypt.compare(password, user.password))) {
-  //     throw new ErrorHttpException(HttpStatus.BAD_REQUEST,"User does not exit / Incorrect Password",HttpStatus[HttpStatus.BAD_REQUEST]);
-  //   }
-
-  //   const payload = { sub: user.id, role: user.role};
-  //   const accessToken = this.jwtService.generateAccessToken(payload);
-
-  //   return { accessToken, user };
-  // }
 
   async therapistSignIn(email: string, password: string): Promise<{ accessToken: string; user: UserEntity }> {
     const user = await this.userRepository.findOne({

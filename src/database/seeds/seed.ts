@@ -11,9 +11,9 @@ async function bootstrap() {
   console.log('Starting seed process...');
 
 
-  //await seedService.seedTherapistAccount();
+  await seedService.seedTherapistAccount();
   await seedService.seedTherapistAvailability();
-//   await seedService.seedSuperAdminAccount();
+  //await seedService.seedSuperAdminAccount();
 
   console.log('Seeding complete!');
   await app.close();

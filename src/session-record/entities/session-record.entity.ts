@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, ManyToOne, Column, OneToOne, JoinColumn } from "typeorm";
 import { AppointmentEntity } from "../../appointment/entities/appointment.entity";
 
 @Entity('session_records')
@@ -6,7 +6,8 @@ export class SessionRecordEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => AppointmentEntity, (appointment) => appointment.id, { onDelete: 'CASCADE' })
+  @OneToOne(() => AppointmentEntity, (appointment) => appointment.sessionRecord, { onDelete: 'CASCADE' })
+  @JoinColumn()
   appointment: AppointmentEntity;
 
   @Column({ nullable: true })

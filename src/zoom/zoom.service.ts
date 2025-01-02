@@ -150,6 +150,39 @@ export class ZoomService {
         }
       }
 
+
+      async deleteMeeting(
+        meetingId: string,
+        cancelReminders: boolean = false,
+        notifyHosts: boolean = false,
+      ): Promise<void> {
+        const token = await this.getAccessToken();
+    
+        const headers = {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+    
+        const queryParams = new URLSearchParams();
+        if (cancelReminders) queryParams.append('cancel_meeting_reminder', 'true');
+        if (notifyHosts) queryParams.append('schedule_for_reminder', 'true');
+    
+        const url = `${this.zoomApiUrl}/meetings/${meetingId}?${queryParams.toString()}`;
+    
+        try {
+          await firstValueFrom(
+            this.httpService.delete(url, { headers }),
+          );
+          console.log(`Meeting with ID ${meetingId} deleted successfully.`);
+        } catch (error) {
+          console.error('Error deleting Zoom meeting:', error.response?.data || error.message);
+          throw new HttpException(
+            `Failed to delete Zoom meeting: ${error.response?.data?.message || error.message}`,
+            error.response?.status || 500,
+          );
+        }
+      }
+
       async getMeetingRecordingUrl(meetingId: string): Promise<string> {
         const token = await this.getAccessToken();
     

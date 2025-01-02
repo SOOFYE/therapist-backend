@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
+import * as url from 'url';
 
 @Injectable()
 export class S3BucketService {
@@ -28,5 +29,29 @@ export class S3BucketService {
 
     const result = await this.s3.upload(params).promise();
     return result.Location; 
+  }
+
+  async generatePresignedUrl(s3Url: string): Promise<string> {
+    try {
+      
+      const parsedUrl = url.parse(s3Url);
+      const bucket = this.bucketName; 
+      const key = decodeURIComponent(parsedUrl.pathname?.slice(1) || '');
+  
+      if (!key) {
+        throw new Error('Invalid S3 URL: Key could not be extracted.');
+      }
+  
+      const params = {
+        Bucket: bucket,
+        Key: key,
+        Expires: 3600, 
+      };
+  
+      return this.s3.getSignedUrlPromise('getObject', params);
+    } catch (error) {
+      console.error('Error generating pre-signed URL:', error.message);
+      throw new Error('Failed to generate pre-signed URL.');
+    }
   }
 }

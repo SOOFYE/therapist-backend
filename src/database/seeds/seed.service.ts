@@ -26,32 +26,33 @@ export class SeedService {
 
   async seedTherapistAccount(): Promise<void> {
     const therapistConfig = this.configService.get('therapist');
-
-
+  
     const existingUser = await this.userRepository.findOne({
       where: { email: therapistConfig.email },
     });
-
+  
     if (existingUser) {
       console.log('Therapist account already exists');
       return;
     }
-
+  
     const hashedPassword = await bcrypt.hash(therapistConfig.password, 10);
-
+  
     const therapistUser = this.userRepository.create({
-      firstName: therapistConfig.firstName,
-      lastName: therapistConfig.lastName,
-      email: therapistConfig.email,
-      phoneNumber: therapistConfig.phoneNumber,
+      firstName: therapistConfig.firstName.toString() || null,
+      middleName: therapistConfig.middleName.toString()|| null,
+      lastName: therapistConfig.lastName.toString()|| null,
+      email: therapistConfig.email.toString()|| null,
+      phoneNumber: therapistConfig.phoneNumber.toString(),
       password: hashedPassword,
       dob: new Date(therapistConfig.dob),
       role: RoleEnum.therapist,
     });
-
+  
     const savedUser = await this.userRepository.save(therapistUser);
-
+  
     const therapist = this.therapistRepository.create({
+      id: savedUser.id, 
       user: savedUser,
       country: therapistConfig.country,
       preferredLanguages: therapistConfig.preferredLanguages,
@@ -60,9 +61,9 @@ export class SeedService {
       officeLocation: therapistConfig.officeLocation,
       workEmail: therapistConfig.workEmail,
     });
-
+  
     await this.therapistRepository.save(therapist);
-
+  
     console.log('Therapist account seeded successfully');
   }
 
