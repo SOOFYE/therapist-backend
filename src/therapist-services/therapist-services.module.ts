@@ -10,5 +10,6 @@ import { TherapistModule } from '../therapist/therapist.module';
    imports:[TherapistModule,JwtAuthModule,TypeOrmModule.forFeature([TherapistServiceEntity])],
   controllers: [TherapistServicesController],
   providers: [TherapistServicesService],
+  exports: [TherapistServicesService]
 })
 export class TherapistServicesModule {}

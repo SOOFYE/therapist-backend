@@ -10,9 +10,11 @@ import { ZoomModule } from '../zoom/zoom.module';
 import { JwtAuthModule } from '../jwt/jwt.module';
 import { ClientModule } from '../client/client.module';
 import { UserModule } from '../user/user.module';
+import { TherapistModule } from '../therapist/therapist.module';
+import { TherapistServicesModule } from '../therapist-services/therapist-services.module';
 
 @Module({
-  imports:[JwtAuthModule,ZoomModule,ClientModule,UserModule,TypeOrmModule.forFeature([AppointmentEntity,TherapistAvailabilityEntity]),SessionRecordModule,ZoomModule],
+  imports:[TherapistServicesModule,TherapistModule,JwtAuthModule,ZoomModule,ClientModule,UserModule,TypeOrmModule.forFeature([AppointmentEntity,TherapistAvailabilityEntity]),SessionRecordModule,ZoomModule],
   controllers: [AppointmentController],
   providers: [AppointmentService],
 })
