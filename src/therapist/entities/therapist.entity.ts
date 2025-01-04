@@ -7,7 +7,7 @@ import { AppointmentEntity } from "../../appointment/entities/appointment.entity
 @Entity('therapist')
 export class TherapistEntity {
 
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn('uuid')
   id: string;
 
   @OneToOne(() => UserEntity, { eager: true }) 

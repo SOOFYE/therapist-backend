@@ -37,7 +37,7 @@ export class UserEntity {
     @OneToOne(() => TherapistEntity, (therapist) => therapist.user, { nullable: true, cascade: true })
     therapist?: TherapistEntity;
     
-    @OneToMany(() => ClientEntity, (client) => client.user, { cascade: true })
-    clients: ClientEntity[];
+    @OneToMany(() => ClientEntity, (client) => client.user, { nullable: true, cascade: true })
+    clients?: ClientEntity[];
   
 }

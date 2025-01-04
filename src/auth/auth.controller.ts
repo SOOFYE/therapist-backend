@@ -30,6 +30,9 @@ export class AuthController {
   @Post('client/signup')
   @ApiOperation({ summary: 'Client Sign-Up' })
   async clientSignUp(@Body() clientData: ClientSignUpDto): Promise<SuccessResponse<{accessToken: string, user: UserEntity}>> {
+
+    console.log(clientData)
+
     try {
       if (await this.userService.findOne({ email: clientData.email })) {
         throw new ErrorHttpException(
@@ -52,18 +55,21 @@ export class AuthController {
         dob: clientData.dob,
         role: RoleEnum.client,
       });
-  
-      const client: ClientEntity = await this.clientService.create({ user });
-  
-      const updatedUser: UserEntity = await this.userService.update(user.id, { clients: [client] });
 
+      console.log(user)
+
+      const client: ClientEntity = await this.clientService.create({
+        id: user.id, 
+        user,
+      });
+  
       const payload = { sub: user.id, role: user.role}; 
       const accessToken = this.jwtService.generateAccessToken(payload);
   
-      return new SuccessResponse(HttpStatus.CREATED, 'Client account created successfully', {accessToken: accessToken,user: updatedUser});
+      return new SuccessResponse(HttpStatus.CREATED, 'Client account created successfully', {accessToken: accessToken,user: user});
     } catch (error) {
       if (!(error instanceof ErrorHttpException)) {
-        console.log(error);
+        //console.log(error);
         throw new ErrorHttpException(
           HttpStatus.INTERNAL_SERVER_ERROR,
           'An unexpected error occurred',

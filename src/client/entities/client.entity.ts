@@ -5,12 +5,12 @@ import { AppointmentEntity } from "../../appointment/entities/appointment.entity
 @Entity('clients')
 export class ClientEntity {
 
-  @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryColumn('uuid')
+  id: string;
 
-    @OneToOne(() => UserEntity, { eager: true })
-    @JoinColumn({ name: 'id' })
-    user: UserEntity;
+  @OneToOne(() => UserEntity, { eager: true }) 
+  @JoinColumn({ name: 'id' })
+  user: UserEntity;
     
     @OneToMany(() => AppointmentEntity, (appointment) => appointment.client, { cascade: true })
     appointments: AppointmentEntity[]; 
