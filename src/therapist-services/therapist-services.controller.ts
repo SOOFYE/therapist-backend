@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req, HttpStatus } from '@nestjs/common';
 import { TherapistServicesService } from './therapist-services.service';
 
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { PaginatedResult } from '../common/interfaces/paginated-results.interface';
 import { TherapistServiceEntity } from './entities/therapist-service.entity';
 import { CreateTherapistServiceDto } from './dto/create-therapist-service.dto';
@@ -18,6 +18,7 @@ import { TherapistEntity } from '../therapist/entities/therapist.entity';
 import { UpdateTherapistServiceDto } from './dto/update-therapist-service.dto';
 
 @Controller('therapist-services')
+@ApiBearerAuth()
 export class TherapistServicesController {
   constructor(
     private readonly therapistServicesService: TherapistServicesService,

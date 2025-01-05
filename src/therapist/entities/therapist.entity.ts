@@ -35,7 +35,7 @@ export class TherapistEntity {
   @OneToMany(() => TherapistServiceEntity, (service) => service.therapist, { cascade: true })
   services: TherapistServiceEntity[];
 
-  @OneToMany(() => TherapistAvailabilityEntity, (availability) => availability.therapist, { cascade: true })
+  @OneToMany(() => TherapistAvailabilityEntity, (availability) => availability.therapist, { cascade: true, eager: true, })
   availability: TherapistAvailabilityEntity[];
 
   @OneToMany(() => AppointmentEntity, (appointment) => appointment.therapist, { cascade: true })

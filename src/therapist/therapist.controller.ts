@@ -49,8 +49,6 @@ export class TherapistController {
   }
 
 
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RoleEnum.therapist)
   @Get('/:therapistId')
   @ApiOperation({ summary: 'Get therapist and user details (Therapist only)' })
   async getTherapistDetailsWithId(
