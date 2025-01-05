@@ -1,6 +1,6 @@
 import { Controller, Get, Body, Put, Req, UseGuards } from '@nestjs/common';
 import { TherapistAvailabilityService } from './therapist-availability.service';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TherapistAvailabilityEntity } from './entities/therapist-availability.entity';
 import { Roles } from '../common/decorators/role.decorator';
 import { ErrorHttpException } from '../common/errors/error-http.exception';
@@ -55,6 +55,10 @@ export class TherapistAvailabilityController {
   @Roles(RoleEnum.therapist)
   @Put()
   @ApiOperation({ summary: 'Update therapist availability' })
+  @ApiBody({
+    type: [UpdateTherapistAvailabilityDto], 
+    description: 'Array of availability updates for the therapist',
+  })
   async updateTherapistAvailability(
     @Req() req: Request,
     @Body() updates: UpdateTherapistAvailabilityDto[],
