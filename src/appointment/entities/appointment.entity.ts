@@ -23,6 +23,7 @@ export class AppointmentEntity {
   type: AppointmentTypeEnum; 
 
   @ManyToOne(() => TherapistEntity, (therapist) => therapist.appointments)
+  @JoinColumn()
   therapist: TherapistEntity;
 
   @ManyToOne(() => TherapistServiceEntity, { nullable: false })

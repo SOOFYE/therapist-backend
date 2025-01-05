@@ -82,9 +82,9 @@ export class AuthController {
     }
   }
 
-  @Post('client/signin')
-@ApiOperation({ summary: 'Client Sign-In' })
-async clientSignIn(@Body() loginData: LoginDto): Promise<SuccessResponse<{ accessToken: string; user: UserEntity }>> {
+  @Post('signin')
+@ApiOperation({ summary: 'User Sign-In' })
+async UserSignIn(@Body() loginData: LoginDto): Promise<SuccessResponse<{ accessToken: string; user: UserEntity }>> {
   try {
     const user: UserEntity = await this.userService.findOne({ email: loginData.email });
 
@@ -109,7 +109,7 @@ async clientSignIn(@Body() loginData: LoginDto): Promise<SuccessResponse<{ acces
     const payload = { sub: user.id, role: user.role };
     const accessToken = this.jwtService.generateAccessToken(payload);
 
-    return new SuccessResponse(HttpStatus.OK, 'Client logged in successfully', { accessToken, user });
+    return new SuccessResponse(HttpStatus.OK, 'User logged in successfully', { accessToken, user });
   } catch (error) {
     if (!(error instanceof ErrorHttpException)) {
       console.log(error);
@@ -125,48 +125,48 @@ async clientSignIn(@Body() loginData: LoginDto): Promise<SuccessResponse<{ acces
   }
 }
 
-@Post('therapist/signin')
-@ApiOperation({ summary: 'Therapist Sign-In' })
-async therapistSignIn(@Body() loginData: LoginDto): Promise<SuccessResponse<{ accessToken: string; user: UserEntity }>> {
-  try {
-    const user: UserEntity = await this.userService.findOne({ email: loginData.email, role: RoleEnum.therapist });
+// @Post('therapist/signin')
+// @ApiOperation({ summary: 'Therapist Sign-In' })
+// async therapistSignIn(@Body() loginData: LoginDto): Promise<SuccessResponse<{ accessToken: string; user: UserEntity }>> {
+//   try {
+//     const user: UserEntity = await this.userService.findOne({ email: loginData.email, role: RoleEnum.therapist });
 
-    if (!user) {
-      throw new ErrorHttpException(
-        HttpStatus.NOT_FOUND,
-        'Therapist with this email does not exist',
-        'Not Found',
-        null,
-      );
-    }
+//     if (!user) {
+//       throw new ErrorHttpException(
+//         HttpStatus.NOT_FOUND,
+//         'Therapist with this email does not exist',
+//         'Not Found',
+//         null,
+//       );
+//     }
 
-    if (!await this.authService.comparePassword(loginData.password, user.password)) {
-      throw new ErrorHttpException(
-        HttpStatus.BAD_REQUEST,
-        'Incorrect email/password',
-        'Authentication Failed',
-        null,
-      );
-    }
+//     if (!await this.authService.comparePassword(loginData.password, user.password)) {
+//       throw new ErrorHttpException(
+//         HttpStatus.BAD_REQUEST,
+//         'Incorrect email/password',
+//         'Authentication Failed',
+//         null,
+//       );
+//     }
 
-    const payload = { sub: user.id, role: user.role };
-    const accessToken = this.jwtService.generateAccessToken(payload);
+//     const payload = { sub: user.id, role: user.role };
+//     const accessToken = this.jwtService.generateAccessToken(payload);
 
-    return new SuccessResponse(HttpStatus.OK, 'Therapist logged in successfully', { accessToken, user });
-  } catch (error) {
-    if (!(error instanceof ErrorHttpException)) {
-      console.log(error);
-      throw new ErrorHttpException(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'An unexpected error occurred',
-        'Internal Server Error',
-        error.message,
-      );
-    }
+//     return new SuccessResponse(HttpStatus.OK, 'Therapist logged in successfully', { accessToken, user });
+//   } catch (error) {
+//     if (!(error instanceof ErrorHttpException)) {
+//       console.log(error);
+//       throw new ErrorHttpException(
+//         HttpStatus.INTERNAL_SERVER_ERROR,
+//         'An unexpected error occurred',
+//         'Internal Server Error',
+//         error.message,
+//       );
+//     }
 
-    throw error;
-  }
-}
+//     throw error;
+//   }
+// }
 
 
 

@@ -166,6 +166,25 @@ export class AppointmentService {
     return !overlappingAppointments;
   }
 
+
+
+
+
+
+  async getBookedAppointments(
+    date: string,
+    therapistId: string,
+  ): Promise<{ startTime: string; endTime: string }[]> {
+    
+    const appointments = await this.appointmentRepository.find({
+      where: { date, therapist: { id: therapistId } },
+      select: ['startTime', 'endTime'],
+      relations: ['therapist']
+    });
+
+    return appointments;
+  }
+
   private getDayOfWeek(date: string): DayOfWeekEnum {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dayName = days[new Date(date).getDay()];

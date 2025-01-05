@@ -25,13 +25,39 @@ export class TherapistController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleEnum.therapist)
-  @Get('')
+  @Get('my')
   @ApiOperation({ summary: 'Get therapist and user details (Therapist only)' })
   async getTherapistDetails(
     @Req() req: Request
   ){
     try{
     const therapistId =  req.user.id;
+    let response = await this.therapistService.findOneWithRelation({id: therapistId},['user'])
+    if(!response) throw new ErrorHttpException(HttpStatus.NOT_FOUND,'Therapist not found','Not Found',null)
+    return new SuccessResponse(HttpStatus.OK,'Therapist details found.',response)
+    }catch(error){
+      if (!(error instanceof ErrorHttpException)) {
+        throw new ErrorHttpException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'Something went wrong while fetching therapist details.',
+          'Internal Server Error',
+          null
+        );
+      }
+      throw error
+    }
+  }
+
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.therapist)
+  @Get('/:therapistId')
+  @ApiOperation({ summary: 'Get therapist and user details (Therapist only)' })
+  async getTherapistDetailsWithId(
+    @Param('therapistId') therapistId: string,
+    @Req() req: Request
+  ){
+    try{
     let response = await this.therapistService.findOneWithRelation({id: therapistId},['user'])
     if(!response) throw new ErrorHttpException(HttpStatus.NOT_FOUND,'Therapist not found','Not Found',null)
     return new SuccessResponse(HttpStatus.OK,'Therapist details found.',response)

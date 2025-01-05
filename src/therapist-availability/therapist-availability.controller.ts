@@ -21,7 +21,7 @@ export class TherapistAvailabilityController {
   
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleEnum.therapist)
-  @Get()
+  @Get('/my')
   @ApiOperation({ summary: 'Get therapist availability' })
   async getTherapistAvailability(@Req() req: Request): Promise<SuccessResponse<TherapistAvailabilityEntity[]>> {
     try {
