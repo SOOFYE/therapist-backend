@@ -86,7 +86,10 @@ export class SessionRecordService {
     }
 
     async findOne(where: FindOptionsWhere<SessionRecordEntity>): Promise<SessionRecordEntity | null> {
-      return this.sessionRecordRepository.findOne({ where });
+      return this.sessionRecordRepository.findOne({
+        where,
+        relations: ['appointment', 'appointment.therapist'], 
+      });
     }
 
 }

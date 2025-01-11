@@ -9,6 +9,8 @@ import { AppointmentTypeEnum } from './enum/appointment-type.enum';
 import { RoleEnum } from '../user/enums/role.enum';
 import { PaginatedResult } from '../common/interfaces/paginated-results.interface';
 import { TherapistServiceEntity } from '../therapist-services/entities/therapist-service.entity';
+import { TherapistAvailabilityService } from '../therapist-availability/therapist-availability.service';
+import { GetAppointmentsFilterDto } from './dto/appointment-filter.dto';
 
 @Injectable()
 export class AppointmentService {
@@ -16,8 +18,9 @@ export class AppointmentService {
   constructor(
     @InjectRepository(AppointmentEntity)
     private readonly appointmentRepository: Repository<AppointmentEntity>,
-    @InjectRepository(TherapistAvailabilityEntity)
-    private readonly availabilityRepository: Repository<TherapistAvailabilityEntity>,
+    private readonly therapistAvailabilityService: TherapistAvailabilityService
+    
+
   ) {}
 
   async createAppointment(
@@ -48,26 +51,59 @@ export class AppointmentService {
   async getAppointmentsForUser(
     userId: string,
     role: RoleEnum,
+    filters: GetAppointmentsFilterDto,
     page: number = 1,
     limit: number = 10,
   ): Promise<PaginatedResult<AppointmentEntity>> {
     const skip = (page - 1) * limit;
   
-    const queryBuilder = this.appointmentRepository.createQueryBuilder('appointment')
-      .leftJoinAndSelect('appointment.sessionRecord', 'sessionRecord'); 
+    const {
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      appointmentType,
+      sortByDate = 'desc',
+    } = filters;
   
+    // Base filters for user role
+    const where: Record<string, any> = {};
     if (role === RoleEnum.client) {
-      queryBuilder.where('appointment.client = :userId', { userId });
+      where.client = { id: userId };
     } else if (role === RoleEnum.therapist) {
-      queryBuilder.where('appointment.therapist = :userId', { userId });
+      where.therapist = { id: userId };
     } else {
       throw new Error('Invalid role provided');
     }
   
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+    // Apply dynamic filters
+    if (startDate) {
+      where.date = { $gte: startDate };
+    }
+    if (endDate) {
+      where.date = { ...where.date, $lte: endDate };
+    }
+    if (startTime) {
+      where.startTime = { $gte: startTime };
+    }
+    if (endTime) {
+      where.endTime = { ...where.endTime, $lte: endTime };
+    }
+    if (appointmentType) {
+      where.type = appointmentType;
+    }
+  
+    // Fetch filtered and paginated results
+    const [data, total] = await Promise.all([
+      this.appointmentRepository.find({
+        where,
+        relations: ['therapist', 'service', 'client', 'sessionRecord'], // Include all necessary relations
+        order: { date: sortByDate.toUpperCase() as 'ASC' | 'DESC' },
+        skip,
+        take: limit,
+      }),
+      this.appointmentRepository.count({ where }),
+    ]);
   
     return {
       hasNext: page * limit < total,
@@ -94,12 +130,7 @@ export class AppointmentService {
 
   async updateAppointment(
     appointmentId: string,
-    updateData: Partial<{
-      date: string;
-      startTime: string;
-      endTime: string;
-      type: AppointmentTypeEnum;
-    }>,
+    updateData: Partial<AppointmentEntity>,
   ): Promise<AppointmentEntity> {
     
     const appointment = await this.appointmentRepository.findOne({
@@ -132,11 +163,12 @@ export class AppointmentService {
     const dayOfWeek = this.getDayOfWeek(date);
   
    
-    const availability = await this.availabilityRepository.findOne({
-      where: { therapist: { id: therapistId }, dayOfWeek, isActive: true },
-    });
+    const availability =  await this.therapistAvailabilityService.getTherapistAvailabilityForDay(
+      therapistId,
+      dayOfWeek,
+    );
   
-    if (!availability) return false; 
+    if (!availability || availability.isActive == false) return false; 
   
 
     console.log('Start Time:', startTime);
@@ -174,15 +206,30 @@ export class AppointmentService {
   async getBookedAppointments(
     date: string,
     therapistId: string,
-  ): Promise<{ startTime: string; endTime: string }[]> {
+  ): Promise<{ 
+    bookedTimes: { startTime: string; endTime: string }[];
+    availability: TherapistAvailabilityEntity;
+  }> {
+  
+    const dayOfWeek = this.getDayOfWeek(date);
+  
+   
+    const availability = await this.therapistAvailabilityService.getTherapistAvailabilityForDay(
+      therapistId,
+      dayOfWeek,
+    );
+  
     
-    const appointments = await this.appointmentRepository.find({
+    const bookedTimes = await this.appointmentRepository.find({
       where: { date, therapist: { id: therapistId } },
       select: ['startTime', 'endTime'],
-      relations: ['therapist']
+      relations: ['therapist'],
     });
-
-    return appointments;
+  
+    return { 
+      bookedTimes, 
+      availability 
+    };
   }
 
   private getDayOfWeek(date: string): DayOfWeekEnum {

@@ -1,12 +1,13 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, Column, OneToOne, JoinColumn } from "typeorm";
 import { AppointmentEntity } from "../../appointment/entities/appointment.entity";
+import { SessionRecordStatus } from "../enum/session-record.enum";
 
 @Entity('session_records')
 export class SessionRecordEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @OneToOne(() => AppointmentEntity, (appointment) => appointment.sessionRecord, { onDelete: 'CASCADE' })
+  @OneToOne(() => AppointmentEntity, (appointment) => appointment.sessionRecord, { onDelete: 'CASCADE', })
   @JoinColumn()
   appointment: AppointmentEntity;
 
@@ -30,4 +31,7 @@ export class SessionRecordEntity {
 
   @Column({ type: 'text', nullable: true })
   meetingSummary: string;
+
+  @Column({ type: 'enum', enum: SessionRecordStatus, default: SessionRecordStatus.SCHEDULED })
+  status: SessionRecordStatus;
 }

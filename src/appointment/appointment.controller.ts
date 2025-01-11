@@ -1,8 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException, UseGuards, Req, Query, HttpStatus, ForbiddenException, HttpException } from '@nestjs/common';
 import { AppointmentService } from './appointment.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
-
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { AppointmentEntity } from './entities/appointment.entity';
 import { SessionRecordService } from '../session-record/session-record.service';
 import { ZoomService } from '../zoom/zoom.service';
@@ -12,18 +11,16 @@ import { RoleEnum } from '../user/enums/role.enum';
 import { Roles } from '../common/decorators/role.decorator';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../jwt/guards/jwt-auth.guard';
-import { ClientService } from '../client/client.service';
 import { UserEntity } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
-import { ClientEntity } from '../client/entities/client.entity';
-import { SessionRecordEntity } from '../session-record/entities/session-record.entity';
-import { join } from 'path';
 import { PaginatedResult } from '../common/interfaces/paginated-results.interface';
 import { ErrorHttpException } from '../common/errors/error-http.exception';
 import { RescheduleAppointmentDto } from './dto/reshedule-appointment.dto';
 import { SuccessResponse } from '../common/sucesses/success-http.response';
 import { TherapistService } from '../therapist/therapist.service';
 import { TherapistServicesService } from '../therapist-services/therapist-services.service';
+import { TherapistAvailabilityEntity } from '../therapist-availability/entities/therapist-availability.entity';
+import { GetAppointmentsFilterDto } from './dto/appointment-filter.dto';
 
 @ApiTags('Appointments')
 @Controller('appointments')
@@ -49,7 +46,10 @@ export class AppointmentController {
   async getBookedAppointments(
     @Query('date') date: string,
     @Query('therapistId') therapistId: string,
-  ): Promise<SuccessResponse<{ startTime: string; endTime: string; }[]>> {
+  ): Promise<SuccessResponse<{
+    bookedTimes: { startTime: string; endTime: string }[];
+    availability: TherapistAvailabilityEntity | null;
+  }>> {
     try {
       
       if (!date || !therapistId) {
@@ -78,32 +78,40 @@ export class AppointmentController {
 
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RoleEnum.client, RoleEnum.therapist)
-  @Get('/my')
-  @ApiOperation({ summary: 'Get paginated appointments for the logged-in user (client,therapist)' })
-  async getAppointments(
-    @Req() req,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-  ): Promise<SuccessResponse<PaginatedResult<AppointmentEntity>>> {
-    try {
-      const userId: string = req?.user?.id;
-      const role: RoleEnum = req?.user?.role;
-      const appointments = await this.appointmentService.getAppointmentsForUser(userId, role, page, limit);
-  
-      return new SuccessResponse(HttpStatus.OK, 'Appointments retrieved successfully.', appointments);
-    } catch (error) {
-      if (!(error instanceof ErrorHttpException)) {
-        throw new ErrorHttpException(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          'Something went wrong while fetching appointments.',
-          'Internal Server Error',
-          null
-        );
-      }
-      throw error;
+@Roles(RoleEnum.client, RoleEnum.therapist)
+@Get('/my')
+@ApiOperation({ summary: 'Get paginated appointments for the logged-in user (client or therapist)' })
+async getAppointments(
+  @Req() req,
+  @Query('page') page: number = 1,
+  @Query('limit') limit: number = 10,
+  @Query() filters: GetAppointmentsFilterDto,
+): Promise<SuccessResponse<PaginatedResult<AppointmentEntity>>> {
+  try {
+    const userId: string = req?.user?.id;
+    const role: RoleEnum = req?.user?.role;
+
+    const appointments = await this.appointmentService.getAppointmentsForUser(
+      userId,
+      role,
+      filters,
+      page,
+      limit,
+    );
+
+    return new SuccessResponse(HttpStatus.OK, 'Appointments retrieved successfully.', appointments);
+  } catch (error) {
+    if (!(error instanceof ErrorHttpException)) {
+      throw new ErrorHttpException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Something went wrong while fetching appointments.',
+        'Internal Server Error',
+        null,
+      );
     }
+    throw error;
   }
+}
 
 
 
@@ -145,38 +153,51 @@ export class AppointmentController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleEnum.therapist)
   @Get('client/:clientId')
-  @ApiOperation({ summary: 'Get paginated appointments for a client' })
+  @ApiOperation({ summary: 'Get paginated appointments for a specific client' })
   async getAppointmentsForClient(
     @Req() req,
     @Param('clientId') clientId: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
+    @Query() filters: GetAppointmentsFilterDto, // Include filters for query
   ): Promise<SuccessResponse<PaginatedResult<AppointmentEntity>>> {
     try {
-      const user = await this.userService.findOne({ id: clientId });
-      if (!user) {
+      // Ensure client exists
+      const client = await this.userService.findOne({ id: clientId });
+      if (!client || client.role !== RoleEnum.client) {
         throw new ErrorHttpException(
           HttpStatus.NOT_FOUND,
           'Client not found.',
           'Not Found',
-          null
         );
       }
-      const appointments = await this.appointmentService.getAppointmentsForUser(user.id, user.role, page, limit);
-      return new SuccessResponse(HttpStatus.OK, 'Appointments for client retrieved successfully.', appointments);
+  
+      // Fetch appointments for the client
+      const appointments = await this.appointmentService.getAppointmentsForUser(
+        client.id,
+        client.role,
+        filters,
+        page,
+        limit,
+      );
+  
+      return new SuccessResponse(
+        HttpStatus.OK,
+        'Appointments for client retrieved successfully.',
+        appointments,
+      );
     } catch (error) {
       if (!(error instanceof ErrorHttpException)) {
+        console.error(error);
         throw new ErrorHttpException(
           HttpStatus.INTERNAL_SERVER_ERROR,
           'Something went wrong while fetching client appointments.',
           'Internal Server Error',
-          null
         );
       }
       throw error;
     }
   }
-
 
  
 
@@ -186,6 +207,12 @@ export class AppointmentController {
   @Roles(RoleEnum.client)
   @Post('/book/:therapistId')
   @ApiOperation({ summary: 'Create an appointment.' })
+  @ApiParam({
+    name: 'therapistId',
+    type: String,
+    description: 'ID of the therapist',
+    example: '68d796bd-60ed-454b-a16f-5953cbf177ca', 
+  })
   async createAppointment(
     @Param('therapistId') therapistId: string,
     @Body() appointmentData: CreateAppointmentDto,
@@ -250,6 +277,8 @@ export class AppointmentController {
         { id: sessionRecord.id },
         { appointment }
       );
+
+      await this.appointmentService.updateAppointment(appointment.id,{sessionRecord: sessionRecord})
   
       return new SuccessResponse(
         HttpStatus.CREATED,

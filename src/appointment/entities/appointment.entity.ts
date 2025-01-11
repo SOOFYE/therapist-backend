@@ -22,18 +22,18 @@ export class AppointmentEntity {
   @Column({ type: 'enum', enum: AppointmentTypeEnum })
   type: AppointmentTypeEnum; 
 
-  @ManyToOne(() => TherapistEntity, (therapist) => therapist.appointments)
+  @ManyToOne(() => TherapistEntity, (therapist) => therapist.appointments, { eager: true })
   @JoinColumn()
   therapist: TherapistEntity;
 
-  @ManyToOne(() => TherapistServiceEntity, { nullable: false })
+  @ManyToOne(() => TherapistServiceEntity, { nullable: false, eager: true })
   @JoinColumn()
   service: TherapistServiceEntity;
 
-  @ManyToOne(() => ClientEntity, (client) => client.appointments)
+  @ManyToOne(() => ClientEntity, (client) => client.appointments, { eager: true })
   client: ClientEntity;
 
-  @OneToOne(() => SessionRecordEntity, (sessionRecord) => sessionRecord.appointment)
+  @OneToOne(() => SessionRecordEntity, (sessionRecord) => sessionRecord.appointment, { eager: true })
   @JoinColumn() 
   sessionRecord: SessionRecordEntity; 
 }

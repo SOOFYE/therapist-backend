@@ -13,6 +13,17 @@ export class TherapistAvailabilityService {
     private readonly availabilityRepository: Repository<TherapistAvailabilityEntity>,
   ) {}
 
+
+  async getTherapistAvailabilityForDay(
+    therapistId: string,
+    dayOfWeek: DayOfWeekEnum,
+  ): Promise<TherapistAvailabilityEntity | null> {
+    return this.availabilityRepository.findOne({
+      where: { therapist: { id: therapistId }, dayOfWeek},
+    });
+  }
+
+
   async getTherapistAvailability(therapistId: string): Promise<TherapistAvailabilityEntity[]> {
     return this.availabilityRepository.find({
       where: { therapist: { id: therapistId } },

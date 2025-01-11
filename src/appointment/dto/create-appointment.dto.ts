@@ -30,7 +30,7 @@ export class CreateAppointmentDto {
 
     @ApiProperty({
       description: 'The ID of the service being selected',
-      example: 'd3b5228d-f09c-4b5f-bd81-b0d7b4614c8c',
+      example: '65af8050-55e2-4538-98bd-04c74adabc85',
     })
     @IsNotEmpty()
     @IsUUID()

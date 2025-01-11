@@ -9,5 +9,6 @@ import { JwtAuthModule } from '../jwt/jwt.module';
   imports:[JwtAuthModule,TypeOrmModule.forFeature([TherapistAvailabilityEntity])],
   controllers: [TherapistAvailabilityController],
   providers: [TherapistAvailabilityService],
+  exports: [TherapistAvailabilityService],
 })
 export class TherapistAvailabilityModule {}
